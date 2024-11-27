@@ -1,0 +1,34 @@
+{
+  "name": "books",
+  "version": "0.0.1",
+  "description": "A book parsing project for multiple sites",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergtco/books.git"
+  },
+  "keywords": [
+    "books",
+    "parse"
+  ],
+  "author": "Ivan Nizelnik",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sergtco/books/issues"
+  },
+  "homepage": "https://github.com/sergtco/books#readme",
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/cheerio": "^0.22.35",
+    "@types/csv-parse": "^1.1.12",
+    "@types/got": "^9.6.12",
+    "cheerio": "^1.0.0",
+    "csv-parse": "^5.6.0",
+    "got": "^14.4.5"
+  }
+}

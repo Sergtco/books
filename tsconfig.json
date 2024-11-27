@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "module": "nodenext",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "moduleResolution": "nodenext"
+  },
+  "include": ["./src/**/*"]
+}

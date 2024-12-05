@@ -18,6 +18,7 @@
       devShells.default = pkgs.mkShell {
         buildInputs = [
           pkgs.nodejs
+          pkgs.sqlite
 
           pkgs.jq
         ];

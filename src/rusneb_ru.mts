@@ -2,11 +2,11 @@ import got from "got";
 import * as cheerio from "cheerio";
 import { BookInfo, delay, Parser } from "./common.mjs";
 
-export class AuthorTodayParser implements Parser {
+export class RusnebRuParser implements Parser {
     baseUrl: string;
 
     constructor() {
-        this.baseUrl = "https://author.today";
+        this.baseUrl = "https://rusneb.ru";
     }
 
     public async parse(startPage: number = 1, pageCount: number = 1): Promise<BookInfo[]> {
@@ -14,8 +14,9 @@ export class AuthorTodayParser implements Parser {
             .fill(0)
             .map(async (_, ind) => {
                 await delay(10000 * ind)
-                console.log(`authors.today: getting books page ${ind + startPage}`)
+                console.log(`rusneb.ru: getting books page ${ind + startPage}`)
                 return this.getBookPathList(ind + startPage).then(paths =>
+
                     paths
                         .map(async (path, i) => {
                             await delay(150 * i);
@@ -26,15 +27,15 @@ export class AuthorTodayParser implements Parser {
             )
         )
             .then((val) => Promise.all(val.flat()))
-            .catch((err) => { throw Error("parse authors.today: ", { cause: err }) })
+            .catch((err) => { throw Error("parse rusneb.ru: ", { cause: err }) })
     }
 
     private async getBookPathList(pageNumber: number = 1): Promise<string[]> {
-        return got(this.baseUrl + `/work/genre/all/ebook?page=${pageNumber}`)
+        return got(this.baseUrl + `/search/?c[0]=25&PAGEN_1=${pageNumber}`)
             .then((data) =>
-                cheerio.load(data.body)("#search-results>div>div>.book-title>a")
+                cheerio.load(data.body)('div[class^="search-list__item_column"]:nth-child(1)>p:nth-child(1)>a[class^="search-list__item_link"]')
                     .toArray()
-                    .map((elem): string | null => {
+                    .map((elem) => {
                         switch (elem.type) {
                             case "tag":
                                 return elem.attribs["href"]
@@ -67,8 +68,8 @@ export class AuthorTodayParser implements Parser {
 
     private getBookTitle(bookPage: string): string {
         try {
-            return cheerio.load(bookPage)(".book-meta-panel>.book-title")
-                .contents().first().text().trim()
+            return cheerio.load(bookPage)('h1[class^="title"]')
+                .text().trim()
         } catch (err) {
             throw Error("get book title: ", { cause: err })
         }
@@ -76,11 +77,9 @@ export class AuthorTodayParser implements Parser {
 
     private getBookAuthors(bookPage: string): string[] {
         try {
-            return cheerio.load(bookPage)(".book-meta-panel>.book-authors")
-                .children("span").children("a")
+            return cheerio.load(bookPage)('div.cards__elem_right>div>div>div.cards__author>span[itemprop="author"]')
                 .contents().toArray()
-                .map((el) => el.data)
-                .filter((v) => v != undefined)
+                .map(el => el.data)
         } catch (err) {
             throw Error("get book authors: ", { cause: err })
         }
@@ -88,11 +87,12 @@ export class AuthorTodayParser implements Parser {
 
     private getBookGenres(bookPage: string): string[] {
         try {
-            return cheerio.load(bookPage)(".book-meta-panel>div>.book-genres")
-                .children("a")
-                .contents().toArray()
-                .map((elem) => elem.data)
-                .filter((v) => v != undefined)
+            return cheerio.load(bookPage)('div.content:nth-child(1)')
+                .contents()
+                .toArray()
+                .map(el => el.data)
+                .filter(el => el == undefined || el.trim() == "")
+
         } catch (err) {
             throw Error("get book genres: ", { cause: err })
         }
@@ -100,9 +100,11 @@ export class AuthorTodayParser implements Parser {
 
     private getBookCycle(bookPage: string): string {
         try {
-            const selector = cheerio.load(bookPage)(".book-meta-panel>div>div:nth-child(3)>a")
-                .contents().toArray();
-            return selector.length > 0 ? selector[0].data : undefined;
+            const text = cheerio.load(bookPage)('a[itemprop="isPartOf"]')
+                .contents()
+                .text()
+                .trim()
+            return text == "" ? undefined : text;
         } catch (err) {
             throw Error("get book cycle: ", { cause: err });
         }
@@ -110,8 +112,8 @@ export class AuthorTodayParser implements Parser {
 
     private getBookAnnotation(bookPage: string): string {
         try {
-            return cheerio.load(bookPage)(".annotation>div")
-                .contents().text().trim()
+            return cheerio.load(bookPage)('.annotation')
+                .text().trim()
         } catch (err) {
             throw Error("get book annotation: ", { cause: err })
         }
@@ -119,13 +121,12 @@ export class AuthorTodayParser implements Parser {
 
     private getBookDate(bookPage: string): string {
         try {
-            const elem = cheerio.load(bookPage)(".book-meta-panel>div>div>span.hint-top")
-                .toArray()
-                .filter((elem) => elem.type == "tag" && elem.attribs["data-time"] != "")[0];
-            return elem.type == "tag" ? elem.attribs["data-time"] : "";
+            return cheerio.load(bookPage)('div.cards-table>div>div')
+                .filter((_, el) => el.type == "tag" && el.children[0].data != undefined && el.children[0].data.match("Год издания") != undefined)
+                .next()
+                .text().trim()
         } catch (err) {
             throw Error("get book date: ", { cause: err });
         }
     }
 };
-

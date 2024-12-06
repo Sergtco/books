@@ -1,6 +1,7 @@
 import got from "got";
 import * as cheerio from "cheerio";
-import { BookInfo, delay, Parser } from "./common.mjs";
+import { delay, Parser } from "../common.mjs";
+import { BookInfo } from "../models.mjs";
 
 export class LitresRuParser implements Parser {
     baseUrl: string;
@@ -92,6 +93,8 @@ export class LitresRuParser implements Parser {
                 .contents()
                 .toArray()
                 .map(el => el.data)
+                .filter((v) => v != undefined && v.trim() != "")
+                .filter((v, i, ar) => ar.indexOf(v) === i)
 
         } catch (err) {
             throw Error("get book genres: ", { cause: err })

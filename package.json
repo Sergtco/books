@@ -20,18 +20,24 @@
   },
   "homepage": "https://github.com/sergtco/books#readme",
   "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "@types/validator": "^13.12.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "@mikro-orm/core": "^6.4.1",
+    "@mikro-orm/sqlite": "^6.4.1",
     "@types/cheerio": "^0.22.35",
     "@types/csv-parse": "^1.1.12",
     "@types/got": "^9.6.12",
     "cheerio": "^1.0.0",
     "cron": "^3.3.0",
     "csv-stringify": "^6.5.2",
+    "express": "^4.21.2",
     "got": "^14.4.5",
-    "sequelize": "^6.37.5",
+    "reflect-metadata": "^0.2.2",
     "sqlite3": "^5.1.7"
   }
 }

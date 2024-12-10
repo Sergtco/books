@@ -1,89 +1,41 @@
-import { DataTypes, Sequelize } from "sequelize";
+import { MikroORM, SqliteDriver } from "@mikro-orm/sqlite";
 import { Author, Book, BookInfo, Genre } from "../models.mjs";
 
-export class Database {
-    private orm: Sequelize;
-    constructor(path: string) {
-        this.orm = new Sequelize(`sqlite:${path}`, { logging: false });
-        Book.init({
-            id: {
-                type: DataTypes.INTEGER.UNSIGNED,
-                primaryKey: true,
-                autoIncrement: true,
-            },
-            url: {
-                type: new DataTypes.STRING(256),
-                allowNull: false,
-                unique: true,
-            },
-            name: {
-                type: new DataTypes.STRING(),
-                allowNull: false,
-            },
-            date: DataTypes.DATE,
-            cycle: new DataTypes.STRING(),
-            annotation: new DataTypes.STRING(),
-        }, { tableName: "book", sequelize: this.orm });
-
-        Genre.init({
-            id: {
-                type: DataTypes.INTEGER.UNSIGNED,
-                primaryKey: true,
-                autoIncrement: true,
-            },
-            name: {
-                type: new DataTypes.STRING(),
-                allowNull: false,
-                unique: true,
-            }
-        }, { tableName: "genre", sequelize: this.orm });
-
-        Author.init({
-            id: {
-                type: DataTypes.INTEGER.UNSIGNED,
-                primaryKey: true,
-                autoIncrement: true,
-            },
-            name: {
-                type: new DataTypes.STRING(),
-                allowNull: false,
-                unique: true,
-            }
-        }, { tableName: "author", sequelize: this.orm });
-
-        Book.belongsToMany(Genre, { through: "Book_Genre", as: "genres" });
-        Book.belongsToMany(Author, { through: "Book_Author", as: "authors" });
-
+async function newDB(path: string): Promise<Database> {
+    const db = new Database(await MikroORM.init<SqliteDriver>({
+        dbName: path,
+        name: path,
+        entities: [Book, Author, Genre],
+    }))
+    await db.UpdateSchema();
+    return db;
+}
+class Database {
+    private orm: MikroORM;
+    constructor(orm: MikroORM) {
+        this.orm = orm
     }
 
+    public async UpdateSchema() {
+        await this.orm.schema.updateSchema()
+    }
 
     public async AddBook(book: BookInfo): Promise<Book> {
-        await this.orm.sync();
-        const transaction = await this.orm.transaction();
-        try {
-            const [newBook, present] = await Book.findOrCreate({ where: { url: book.url }, defaults: { url: book.url, name: book.name, date: book.date, cycle: book.cycle, annotation: book.annotation }, transaction: transaction });
-            if (present) {
-                transaction.commit()
-                return newBook;
-            }
+        const em = this.orm.em.fork()
 
-            for (const genre of book.genres) {
-                const [newGenre, _] = await Genre.findOrCreate({ where: { name: genre }, defaults: { name: genre }, transaction: transaction });
-                await newBook.addGenre(newGenre, { transaction: transaction })
-            }
-
-            for (const author of book.authors) {
-                const [newauthor, _] = await Author.findOrCreate({ where: { name: author }, defaults: { name: author }, transaction: transaction });
-                await newBook.addAuthor(newauthor, { transaction: transaction })
-            }
-
-            const found = await Book.findOne({ where: { url: newBook.url }, include: [Book.associations.genres, Book.associations.authors], transaction: transaction });
-            transaction.commit();
-            return found;
-        } catch (exc) {
-            transaction.rollback();
-            return undefined;
-        }
+        const newAuthors: Author[] = book.authors.map(author_name => new Author(author_name));
+        const newGenres: Genre[] = book.genres.map(genre_name => new Genre(genre_name));
+        const newBook: Book = new Book(book.url, book.name, newAuthors, newGenres, book.date, book.cycle, book.annotation);
+        await em.persistAndFlush(newBook);
+        return newBook;
     }
+
+    public async getBookById(id: number): Promise<Book> {
+        const em = this.orm.em.fork()
+        const book = await em.findOne(Book, id, { populate: ['genres', 'authors'] });
+        return book;
+    }
+
 }
 
+export const DB = await newDB("./books.sqlite");

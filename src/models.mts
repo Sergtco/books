@@ -1,4 +1,4 @@
-import { Association, CreationOptional, HasManyAddAssociationMixin, InferAttributes, InferCreationAttributes, Model, NonAttribute } from "sequelize";
+import { Entity, ManyToMany, PrimaryKey, Property, Rel } from "@mikro-orm/core";
 
 export type BookInfo = {
     url: string;
@@ -10,32 +10,53 @@ export type BookInfo = {
     date?: string;
 };
 
-export class Book extends Model<InferAttributes<Book, { omit: 'authors' | 'genres' }>, InferCreationAttributes<Book, { omit: 'authors' | 'genres' }>> {
-    declare id: CreationOptional<number>;
-    declare url: string;
-    declare name: string;
-    declare cycle: string | null;
-    declare annotation: string | null;
-    declare date: string;
-
-    declare authors: NonAttribute<Author[]>;
-    declare genres: NonAttribute<Genre[]>;
-
-    declare addGenre: HasManyAddAssociationMixin<Genre, number>;
-    declare addAuthor: HasManyAddAssociationMixin<Author, number>;
-
-    declare static associations: {
-        genres: Association<Book, Genre>;
-        authors: Association<Book, Author>;
-    };
+@Entity()
+export class Book {
+    @PrimaryKey()
+    id!: number;
+    @Property()
+    url: string;
+    @Property()
+    name: string;
+    @Property()
+    cycle?: string;
+    @Property()
+    annotation?: string;
+    @Property()
+    date?: string;
+    @ManyToMany(() => Author)
+    authors: Rel<Author[]>;
+    @ManyToMany(() => Genre)
+    genres: Rel<Genre[]>;
+    constructor(url: string, name: string, authors: Author[], genres: Genre[], date?: string, cycle?: string, annotation?: string,) {
+        this.url = url;
+        this.name = name;
+        this.date = date;
+        this.authors = authors;
+        this.genres = genres;
+        this.cycle = cycle;
+        this.annotation = annotation;
+    }
 }
 
-export class Genre extends Model {
-    declare id: CreationOptional<number>;
-    declare name: string;
+@Entity()
+export class Genre {
+    @PrimaryKey()
+    id!: number
+    @Property()
+    name: string;
+    constructor(name: string) {
+        this.name = name;
+    }
 }
 
-export class Author extends Model {
-    declare id: CreationOptional<number>;
-    declare name: string;
+@Entity()
+export class Author {
+    @PrimaryKey()
+    id!: number
+    @Property()
+    name: string;
+    constructor(name: string) {
+        this.name = name;
+    }
 }

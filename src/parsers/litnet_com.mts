@@ -122,11 +122,16 @@ export class LitnetComParser implements Parser {
 
     private getBookDate(bookPage: string): string {
         try {
-            return cheerio.load(bookPage)(".book-view-info>div:nth-child(2)>div>p:nth-child(7)>span:nth-child(2)")
+            const text = cheerio.load(bookPage)(".book-view-info>div:nth-child(2)>div>p:nth-child(7)>span:nth-child(2)")
                 .contents()
                 .first()
                 .text()
-                .trim()
+                .trim();
+            const minus = text.indexOf("—");
+            if (text.indexOf("...") != -1) {
+                return new Date(text.slice(0, minus)).getFullYear().toString();
+            }
+            return new Date(text.slice(minus + 1)).getFullYear().toString();
         } catch (err) {
             throw Error("get book date: ", { cause: err });
         }

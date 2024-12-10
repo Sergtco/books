@@ -3,29 +3,35 @@ import { bulkParse, Parser } from "./common.mjs";
 import { LitnetComParser } from "./parsers/litnet_com.mjs";
 import { LitresRuParser } from "./parsers/litres_ru.mjs";
 import { RusnebRuParser } from "./parsers/rusneb_ru.mjs";
-import { Database } from "./database/database.mjs";
 import { CronJob } from "cron";
+import { serve } from "./web/server.js";
+import { DB } from "./database/database.mjs";
 
 
 async function main() {
-    let parsingCron = await startCronParse();
-    console.log(parsingCron);
+    const parsingCron = await startCronParse();
+    serve();
 }
 
 async function startCronParse(): Promise<CronJob> {
     let startPage = 1;
-    const cron = new CronJob(
-        "0 */10 * * * *", // every 10 minutes
-        async () => {
-            console.log("Starting to parse data:");
-            await runParse(startPage);
-            startPage += 6
+    const cron = CronJob.from({
+        // cronTime: "0 */5 * * * *", // every 10 minutes
+        cronTime: "* * * * * *", // every 0 minutes
+        onTick: async () => {
+            try {
+                console.log("Starting to parse data:");
+                await runParse(startPage);
+                startPage += 6
+            } catch (exc) {
+                console.log(exc);
+            }
         },
-        null,
-        true,
-        "Europe/Moscow"
-    );
-    cron.start();
+        runOnInit: true,
+        utcOffset: 60 * 3,
+        waitForCompletion: true,
+
+    });
     return cron
 }
 
@@ -33,8 +39,7 @@ async function runParse(startPage: number) {
     const parsers: Parser[] = [new AuthorTodayParser(), new LitnetComParser(), new LitresRuParser(), new RusnebRuParser()];
     console.log("Parsing...");
     const books = await bulkParse(parsers, startPage, 5);
-    const db = new Database("books.db");
-    await Promise.all(books.map(async book => db.AddBook(book)));
+    await Promise.all(books.map(async book => await DB.AddBook(book).catch(() => undefined)));
     console.log(`Parsed ${books.length} books!`);
 }
 

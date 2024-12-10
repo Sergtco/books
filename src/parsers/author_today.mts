@@ -123,8 +123,9 @@ export class AuthorTodayParser implements Parser {
         try {
             const elem = cheerio.load(bookPage)(".book-meta-panel>div>div>span.hint-top")
                 .toArray()
-                .filter((elem) => elem.type == "tag" && elem.attribs["data-time"] != "")[0];
-            return elem.type == "tag" ? elem.attribs["data-time"] : "";
+                .filter((elem) => elem.type == "tag" && elem.attribs["data-time"] != "" && elem.attribs["data-time"] != undefined).at(0);
+
+            return elem && elem.type == "tag" ? (new Date(elem.attribs["data-time"])).getFullYear().toString() : undefined;
         } catch (err) {
             throw Error("get book date: ", { cause: err });
         }

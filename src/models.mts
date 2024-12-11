@@ -45,6 +45,8 @@ export class Genre {
     id!: number
     @Property()
     name: string;
+    @ManyToMany(() => Book, book => book.genres)
+    books: Rel<Book[]>
     constructor(name: string) {
         this.name = name;
     }
@@ -56,6 +58,8 @@ export class Author {
     id!: number
     @Property()
     name: string;
+    @ManyToMany(() => Book, book => book.authors)
+    books: Rel<Book[]>
     constructor(name: string) {
         this.name = name;
     }

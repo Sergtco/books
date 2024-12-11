@@ -36,10 +36,10 @@ async function startCronParse(): Promise<CronJob> {
 }
 
 async function runParse(startPage: number) {
-    const parsers: Parser[] = [new AuthorTodayParser(), new LitnetComParser(), new LitresRuParser(), new RusnebRuParser()];
+    const parsers: Parser[] = [new AuthorTodayParser(), new LitnetComParser(), new LitresRuParser()/* , new RusnebRuParser() */];
     console.log("Parsing...");
     const books = await bulkParse(parsers, startPage, 5);
-    await Promise.all(books.map(async book => await DB.AddBook(book).catch(() => undefined)));
+    await Promise.all(books.map(async book => DB.AddBook(book).catch(() => undefined)));
     console.log(`Parsed ${books.length} books!`);
 }
 

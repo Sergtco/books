@@ -1,10 +1,13 @@
+import { DB } from "../database/database.mjs"
 import { Book } from "../models.mjs"
 
 type IndexData = {
     books: Book[]
 }
 
-export function indexPage(data: IndexData): string {
+export async function indexPage(data: IndexData): Promise<string> {
+    const bookCountByGenre = await DB.bookCountByGenre()
+    const bookCountByAuthor = await DB.bookCountByAuthor()
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -13,19 +16,31 @@ export function indexPage(data: IndexData): string {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Book store stats</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
     <body>
         <div class="flex flex-col min-h-screen">
-            <div class="flex flex-row place-content-center">
-                <div class="bg-green-400 size-10">
-                    
-                </div>
-                <div class="bg-green-400 size-10">
-                    
-                </div>
+            <div class="flex flex-grow">
+                ${createChart({
+        name: "GenreCount",
+        type: "bar",
+        labels: [...bookCountByGenre.keys()],
+        dataset: {
+            label: "Books per genre",
+            data: [...bookCountByGenre.values()],
+        }
+    })}
             </div>
-            <div class="flex flex-col">
-${data.books.map(book => bookEntry(book)).join("\n")}
+            <div class="flex flex-grow">
+                ${createChart({
+        name: "AuthorCount",
+        type: "bar",
+        labels: [...bookCountByAuthor.keys()],
+        dataset: {
+            label: "Books per author",
+            data: [...bookCountByAuthor.values()],
+        }
+    })}
             </div>
         </div>
     </body>
@@ -35,7 +50,7 @@ ${data.books.map(book => bookEntry(book)).join("\n")}
 
 function bookEntry(book: Book): string {
     return `
-<div class="flex flex-row"> 
+<div class="flex flex-row flex-nowrap"> 
     <p class="grow">${book.url} | </p>
     <p class="grow">${book.name} | </p>
     <p class="grow">${book.cycle} | </p>
@@ -58,3 +73,38 @@ function bookField(name: string, entry: string): string {
 </div>
 `
 }
+
+
+type ChartInfo = {
+    name: string;
+    type: string;
+    labels: string[];
+    dataset: {
+        label: string;
+        data: number[];
+    }
+}
+
+function createChart(info: ChartInfo): string {
+    return `
+<div class="flex-grow">
+    <canvas id="${info.name}">
+    </canvas>
+</div>
+<script>
+const ctx${info.name} = document.getElementById('${info.name}');
+
+new Chart(ctx${info.name}, {
+    type:  '${info.type}',
+    data: {
+        labels: [${info.labels.map(label => "'" + label + "'").join(", ")}],
+        datasets: [{
+            label: '${info.dataset.label}',
+            data: [${info.dataset.data}],
+        }]
+    },
+});
+</script>
+`
+}
+

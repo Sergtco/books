@@ -36,6 +36,26 @@ class Database {
         return book;
     }
 
+    public async bookCountByGenre(): Promise<Map<string, number>> {
+        const res: Map<string, number> = new Map();
+        const em = this.orm.em.fork();
+        const allGenres = await em.findAll(Genre, { populate: ['books'] });
+        for (const genre of allGenres) {
+            res.set(genre.name, res.get(genre.name) + genre.books.length || genre.books.length);
+        }
+        return new Map([...res.entries()].sort((a, b) => b[1] - a[1]))
+    }
+
+    public async bookCountByAuthor(): Promise<Map<string, number>> {
+        const res: Map<string, number> = new Map();
+        const em = this.orm.em.fork();
+        const allAuthors = await em.findAll(Author, { populate: ['books'] });
+        for (const author of allAuthors) {
+            res.set(author.name, res.get(author.name) + author.books.length || author.books.length);
+        }
+        return new Map([...res.entries()].sort((a, b) => b[1] - a[1]))
+    }
+
 }
 
 export const DB = await newDB("./books.sqlite");

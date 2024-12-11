@@ -19,5 +19,5 @@ async function index(req: Request, resp: Response) {
         }
     }
     resp.setHeader("Content-Type", "text/html")
-    resp.send(indexPage({ books: books }))
+    resp.send(await indexPage({ books: books }))
 }

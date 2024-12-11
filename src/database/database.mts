@@ -13,15 +13,15 @@ async function newDB(path: string): Promise<Database> {
 class Database {
     private orm: MikroORM;
     constructor(orm: MikroORM) {
-        this.orm = orm
+        this.orm = orm;
     }
 
     public async UpdateSchema() {
-        await this.orm.schema.updateSchema()
+        await this.orm.schema.updateSchema();
     }
 
     public async AddBook(book: BookInfo): Promise<Book> {
-        const em = this.orm.em.fork()
+        const em = this.orm.em.fork();
 
         const newAuthors: Author[] = book.authors.map(author_name => new Author(author_name));
         const newGenres: Genre[] = book.genres.map(genre_name => new Genre(genre_name));
@@ -31,11 +31,16 @@ class Database {
     }
 
     public async getBookById(id: number): Promise<Book> {
-        const em = this.orm.em.fork()
+        const em = this.orm.em.fork();
         const book = await em.findOne(Book, id, { populate: ['genres', 'authors'] });
         return book;
     }
 
+    public async countBooks(): Promise<number> {
+        const em = this.orm.em.fork();
+        const count = await em.count(Book, {});
+        return count;
+    }
     public async bookCountByGenre(): Promise<Map<string, number>> {
         const res: Map<string, number> = new Map();
         const em = this.orm.em.fork();

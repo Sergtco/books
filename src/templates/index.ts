@@ -1,13 +1,41 @@
 import { DB } from "../database/database.mjs"
 import { Book } from "../models.mjs"
 
+type PageType = "genre" | "author";
+
 type IndexData = {
-    books: Book[]
+    type: PageType
 }
 
 export async function indexPage(data: IndexData): Promise<string> {
-    const bookCountByGenre = await DB.bookCountByGenre()
-    const bookCountByAuthor = await DB.bookCountByAuthor()
+    let chartData: ChartInfo;
+    switch (data.type) {
+        case "genre":
+            const bookCountByGenre = await DB.bookCountByGenre()
+            chartData = {
+                name: "GenreCount",
+                type: "bar",
+                labels: [...bookCountByGenre.keys()],
+                dataset: {
+                    label: "Books per genre",
+                    data: [...bookCountByGenre.values()],
+                }
+            }
+            break;
+        case "author":
+            const bookCountByAuthor = await DB.bookCountByAuthor()
+            chartData = {
+                name: "AuthorCount",
+                type: "bar",
+                labels: [...bookCountByAuthor.keys()],
+                dataset: {
+                    label: "Books per author",
+                    data: [...bookCountByAuthor.values()],
+                }
+            }
+        default:
+            break;
+    }
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -20,27 +48,16 @@ export async function indexPage(data: IndexData): Promise<string> {
     </head>
     <body>
         <div class="flex flex-col min-h-screen">
-            <div class="flex flex-grow">
-                ${createChart({
-        name: "GenreCount",
-        type: "bar",
-        labels: [...bookCountByGenre.keys()],
-        dataset: {
-            label: "Books per genre",
-            data: [...bookCountByGenre.values()],
-        }
-    })}
+            <div class="flex felx-row">
+                <a class="flex-grow bg-green-400 border-black border-2" href="/authors">
+                    Authors
+                </a>
+                <a class="button flex-grow bg-green-400 border-black border-2" href="/genres">
+                    Genres
+                </a>
             </div>
             <div class="flex flex-grow">
-                ${createChart({
-        name: "AuthorCount",
-        type: "bar",
-        labels: [...bookCountByAuthor.keys()],
-        dataset: {
-            label: "Books per author",
-            data: [...bookCountByAuthor.values()],
-        }
-    })}
+                ${createChart(chartData)}
             </div>
         </div>
     </body>
